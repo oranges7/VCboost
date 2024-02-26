@@ -59,21 +59,7 @@ conda config --add channels defaults
 conda config --add channels bioconda
 conda config --add channels conda-forge
 
-# create conda environment named "clair3"
-# replace clair3 by clair3-illumina for using illumina data
-conda create -n clair3 -c bioconda clair3 python=3.9.0 -y
-conda activate clair3
 
-# run clair3 like this afterward
-MODEL_NAME="[YOUR_MODEL_NAME]"         # e.g. r941_prom_hac_g360+g422
-
-run_clair3.sh \
-  --bam_fn=input.bam \                 ## change your bam file name here
-  --ref_fn=ref.fa \                    ## change your reference file name here
-  --threads=${THREADS} \               ## maximum threads to be used
-  --platform="ont" \                   ## options: {ont,hifi,ilmn}
-  --model_path="${CONDA_PREFIX}/bin/models/${MODEL_NAME}" \ 
-  --output=${OUTPUT_DIR}               ## output path prefix 
 ```
 
 Check [Usage](#Usage) for more options. 
