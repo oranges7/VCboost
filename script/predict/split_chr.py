@@ -1,5 +1,4 @@
 import sys
-import os
 f1 = sys.argv[1]
 output_folder = sys.argv[2]
 xy=sys.argv[3]

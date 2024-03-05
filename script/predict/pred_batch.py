@@ -1,35 +1,24 @@
 import tensorflow as tf
-# from tensorflow import keras
-import tensorflow_addons as tfa
-from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Layer, Flatten, Dense, Bidirectional, Dropout, LSTM, \
     LayerNormalization, MultiHeadAttention, Concatenate
-# from tensorflow.keras.layers import Input, Dense, Dropout, LayerNormalization, MultiHeadAttention, Conv2D, MaxPooling1D, Flatten, Concatenate, Add, LSTM
 from tensorflow.keras.models import Model
-# from keras.layers import Layer
 from tensorflow.keras import backend as K
-import logging
 import sys
 import inspect
-# from send_email_function import send_email
 from tensorflow.keras.layers import Input, Conv2D, BatchNormalization, Activation, Add
-from sklearn.metrics import confusion_matrix
-# 读取文件并解析数据
-from datetime import datetime
 import pandas as pd
 import numpy as np
 import os
-from sklearn.model_selection import train_test_split
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
 def get_available_path_log(path):
-    # 如果文件夹不存在，直接返回原始路径
+
     if not os.path.exists(path):
         return path
 
-    # 文件夹存在，尝试在原始路径后面加 1
     index = 1
     while True:
 

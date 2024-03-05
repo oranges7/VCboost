@@ -45,26 +45,21 @@ In a bioconda installation, models are in `{CONDA_PREFIX}/bin/models/`.
 
 ## Installation
 
-### Option 1.  Build an anaconda virtual environment
-
-
-
-
-### Option 2.  Bioconda
+### Build an anaconda virtual environment
 
 
 ```bash
-# make sure channels are added in conda
-conda config --add channels defaults
-conda config --add channels bioconda
-conda config --add channels conda-forge
-
-
+# Clone the Repository
+git clone https://github.com/oranges7/VCboost.git
+# Navigate to the Project Directory
+cd ${repository}
+# You can use Conda, pip, or other tools for installation.
+conda create --name vcboost --file requirements.txt
+# Activate the virtual environment
+conda activate vcboost
+# Display help information for the vcboost
+sh vcboost.sh -h
 ```
-
-Check [Usage](#Usage) for more options. 
-
-
 
 ## Usage
 
@@ -72,14 +67,14 @@ Check [Usage](#Usage) for more options.
 
 
 ```bash
-sh gen_onehot_data.sh \
+sh vcboost.sh \
   -o ${OUTPUT_PATH} \
-  -b ${BAM_FILE} \
+  -b ${BAM_FILE} \ 
   -v ${ORIGINAL_VCF_FILE} \
-  -m ${MODEL_PATH}/${MODEL_PREFIX} \
+  -m ${MODEL_PREFIX} \ 
   -r ${REFERENCE}
 
-## VCboost final output file: ${OUTPUT_PATH}/vcboost.vcf
+## VCboost final output file: ${OUTPUT_PATH}/vc_boost.vcf
 ```
 
 ### Options
@@ -88,34 +83,35 @@ sh gen_onehot_data.sh \
 
 ```bash
   Options:
-  -o, --out_path    Output path.
-  -b, --bam_file    BAM file path.
-  -v, --vcf         VCF file path.
-  -m, --model       Model path.
-  -r, --ref_path    Reference file path.
+  -o, -out_path        Output path.
+  -b, -bam_file        BAM file path.
+  -v, -vcf             VCF file path.
+  -m, -model prefix    Model path.
+  -r, -ref_path        Reference file path.
 
 ```
 
 **Other parameters:**
 
 ```bash
-  -t, --threads     Number of threads.The default is 32.
-  -c, --contig      Contig to process.The default is chr1-22.
-  -p, --phase       Disable phase.
-  -h, --help        Display this help message.
+  -t, -threads     Number of threads.The default is 32.
+  -c, -contig      Contig to process.The default is chr1-22.
+  -p, -phase       Disable phase.
+  -h, -help        Display this help message.
 ```
 
 **Train parameters:**
 
 ```bash
-  -w, --work_path   Working directory path.
-  -a, --aim_vcf     Aim VCF file path.
-  -b, --bam_file    BAM file path.
-  -r, --ref         Reference file path.
-  -q, --vcf         Benchmark VCF file path.
-  -m, --mode        Mode of operation.You can choose snp or indel. The default is both.
-  -j, --object      Object to process.
-  -p, --phase       Enable phase.
+  -train   Train mode.
+  -w, -work_path   Working directory path.
+  -a, -aim_vcf     Aim VCF file path.
+  -b, -bam_file    BAM file path.
+  -r, -ref         Reference file path.
+  -q, -vcf         Benchmark VCF file path.
+  -m, -mode        Mode of operation.You can choose snp or indel. The default is both.
+  -j, -object      Object to process.
+  -p, -phase       Enable phase.
 ```
 ----
 

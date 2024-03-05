@@ -3,11 +3,7 @@ import os
 import sys
 from argparse import ArgumentParser, SUPPRESS
 from collections import defaultdict
-# from shared.intervaltree.intervaltree import IntervalTree
 from sys import exit, stderr
-
-# import shared.param_f as param
-# from shared.utils import subprocess_popen
 from subprocess import check_output, PIPE, Popen
 from subprocess import PIPE
 
@@ -18,26 +14,12 @@ def subprocess_popen(args, stdin=None, stdout=PIPE, stderr=stderr, bufsize=83886
 
 def FiterHeteSnpPhasing(ctgName,args):
 
-    """
-    Filter heterozygous snp variant for phasing, currently, we only filter snp variant with low quality socore as low
-    quality variant contains more false positive variant that would lead to a larger minimum error correction loss.
-    """
-    # qual_fn = args.qual_fn if args.qual_fn is not None else 'phase_qual'
     vcf_fn = args.vcf_fn
-    # var_pct_full = args.var_pct_full
-    # contig_name = args.ctgName
     contig_name = ctgName
     split_folder = args.split_folder
     variant_dict = defaultdict(str)
     qual_set = defaultdict(int)
-    # found_qual_cut_off = False
     header = []
-
-    #try to find the global quality cut off:
-    # f_qual = os.path.join(split_folder, qual_fn)
-    # if os.path.exists(f_qual):
-    #     phase_qual_cut_off = float(open(f_qual, 'r').read().rstrip())
-    #     found_qual_cut_off = True
 
     unzip_process = subprocess_popen(shlex.split("gzip -fdc %s" % (vcf_fn)))
     for row in unzip_process.stdout:
@@ -60,12 +42,6 @@ def FiterHeteSnpPhasing(ctgName,args):
                 qual = float(columns[5])
                 qual_set[pos] = qual
 
-    # if found_qual_cut_off:
-    #     remove_low_qual_list = [[k,v] for k,v in qual_set.items() if v < phase_qual_cut_off ]
-    # else:
-    #     remove_low_qual_list = sorted(qual_set.items(), key=lambda x: x[1])[:int(var_pct_full * len(qual_set))]
-    # for pos, qual in remove_low_qual_list:
-    #     del variant_dict[pos]
 
     print ('[INFO] Total heterozygous SNP positions selected: {}: {}'.format(contig_name, len(variant_dict)))
 

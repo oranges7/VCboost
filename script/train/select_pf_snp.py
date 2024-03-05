@@ -1,11 +1,10 @@
 import sys
 import os
-
 merge = sys.argv[1]
 benchmark = sys.argv[2]
 mode = sys.argv[3]
 file_path, full_file_name = os.path.split(merge)
-# 将clair3输出的位点分位p和f
+
 d={}
 g={}
 with open(merge, 'r') as m,open(benchmark,'r') as ben,open(file_path+'/f_'+mode+'.txt','w') as ff,open(file_path+'/p_'+mode+'.txt','w') as p:
@@ -44,7 +43,3 @@ with open(merge, 'r') as m,open(benchmark,'r') as ben,open(file_path+'/f_'+mode+
                 print(key, g[key][0], g[key][1], d[key][2], d[key][3], file=p)
             else:
                 print(key, d[key][0], d[key][1], d[key][2], d[key][3], g[key][0], g[key][1], file=ff)
-        # else:
-        #     if key in g:
-        #         if len(g[key][0]) != len(g[key][1]):
-        #             print(key, d[key][0], d[key][1], d[key][2], d[key][3], g[key][0], g[key][1], file=indel1)

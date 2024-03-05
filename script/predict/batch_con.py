@@ -1,7 +1,6 @@
 import sys
 import numpy as np
 import pandas as pd
-from sklearn.metrics import confusion_matrix
 from argparse import ArgumentParser, SUPPRESS
 
 

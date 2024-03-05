@@ -1,17 +1,11 @@
 import sys, pysam, time, os, copy, argparse, subprocess, random, re, datetime
-import parasail
-import pysam
 import numpy as np
 from subprocess import Popen, PIPE, STDOUT
-from tqdm import tqdm
+
 from argparse import ArgumentParser, SUPPRESS
 from sys import exit, stderr
-import multiprocessing
 
 
-# 此文件旨在尝试使用clair3的结果文件中的snp位点进行phase得到的定相后的bam文件，提取其中的hap信息作为pf模型的特征
-# 相较于p1，p1_try将msa函数的先划分128个bp改为最后划分，并且将覆盖度标准化*100
-# 添加了indel的序列信息，多加一个深度
 
 def subprocess_popen(args, stdin=None, stdout=PIPE, stderr=stderr, bufsize=8388608):
     process = subprocess.Popen(args, stdin=stdin, stdout=stdout, stderr=stderr, bufsize=bufsize,
@@ -42,9 +36,7 @@ def msa(seq_list, ref, mincov, maxcov):
         return np.zeros((72, 5)), np.zeros((72, 5))
     if len(sample) > maxcov:
         sample = random.sample(sample, min(len(sample), maxcov))
-    # print(ref1)
-    # print(sample)
-    # print(seq_list)
+
     sample = sorted(sample)
 
     fa_tmp_file = ''.join(['>%s_SEQ\n%s\n' % (read_name, seq_list[read_name]) for read_name in sample])
@@ -69,9 +61,6 @@ def msa(seq_list, ref, mincov, maxcov):
         else:
             ref_real_0 = p2
 
-    # if len(zz_0) < mincov:
-    #     return None
-
     try:
         ref_real_0_mat = np.eye(5)[[mapping[x] for x in ref_real_0]]
     except UnboundLocalError:
@@ -85,37 +74,15 @@ def msa(seq_list, ref, mincov, maxcov):
     ref_real_0_mat = ref_real_0_mat[:128, :]
     ref_real_0_mat *= 100
     if ref_real_0_mat.shape[0] < 128:
-        # 计算需要补零的行数
         rows_to_add = 128 - ref_real_0_mat.shape[0]
-
-        # 创建一个全零矩阵，形状为 (rows_to_add, 5)
         zeros_matrix = np.zeros((rows_to_add, ref_real_0_mat.shape[1]))
-
-        # 将全零矩阵与原始矩阵垂直堆叠，以扩展行数到 128
         ref_real_0_mat = np.vstack((ref_real_0_mat, zeros_matrix))
     if alt_mat.shape[0] < 128:
-        # 计算需要补零的行数
         rows_to_add = 128 - alt_mat.shape[0]
-
-        # 创建一个全零矩阵，形状为 (rows_to_add, 5)
         zeros_matrix = np.zeros((rows_to_add, alt_mat.shape[1]))
 
-        # 将全零矩阵与原始矩阵垂直堆叠，以扩展行数到 128
         alt_mat = np.vstack((alt_mat, zeros_matrix))
-    # zero_array1= np.zeros((128, 5))
-    # zero_array2 = np.zeros((128, 5))
-    # if len(info[0]) > len(info[1]):
-    #     num = 128 // len(info[0])
-    # else:
-    #     num = 128 // len(info[1])
-    # l1 = np.eye(5)[[mapping[x] for x in info[0] for _ in range(num)]]
-    # l2 = np.eye(5)[[mapping[x] for x in info[1] for _ in range(num)]]
-    # l1 *= 100
-    # l2 *= 100
-    # zero_array1[:len(l1), :] = l1
-    # zero_array2[:len(l2), :] = l2
 
-    # alt_mat -= ref_real_0_mat
     return ref_real_0_mat[:72, :], alt_mat[:72, :]
 
 
@@ -175,21 +142,7 @@ def gen_data(d, ref):
         'S', '-').replace('B', '-')
     mapping = {'A': 25, 'G': 50, 'T': 75, 'C': 100, '-': 0}
     ref_data = np.array([[mapping[x] for x in ref1]])
-    # print(ref_data)
-    # ref_data = np.tile(ref_data, (80, 1))
-    # if indel[0] > indel[1]:
-    #     indel_line = [mapping[x] for x in indel[0]]
-    # else:
-    #     indel_line = [mapping[x] for x in indel[1]]
-    # if len(indel_line) < 33:
-    #     zero_line = np.array([0] * 33)
-    #     zero_line[:len(indel_line)] = indel_line
-    #     indel_line = zero_line
-    # else:
-    #     indel_line = indel_line[:33]
-    # indel_array = np.array([indel_line])
-    # indel_array = np.tile(indel_array, (21, 1))
-    # print(d)
+
     h0, h1, count, mq = gen_data_one_hap(d)
     if count < 80:
         rows_to_add = 80 - count
@@ -198,10 +151,7 @@ def gen_data(d, ref):
     else:
         ref_data = np.tile(ref_data, (80, 1))
 
-    # print(ref_data)
-    # print(h0)
-    # print(h1)
-    # print(mq)
+
     hap_data = np.dstack([ref_data, h0, h1, mq])
     return hap_data
 
@@ -227,16 +177,15 @@ def run(cp0, fastafile, samfile, pileup_file,miss_output, hap_reads_0, hap_reads
     ref = info2 + ref[len(info1):]
 
     ref = ref[:160]
-    # print('ref:',ref)
+
     d = {0: {}, 1: {}}
-    in_run = 0  # 判断是否有堆积
+    in_run = 0
     for pcol in samfile.pileup(chrom, v_pos - 1, v_pos, min_base_quality=12, min_mapping_quality=28, flag_filter=flag,
                                truncate=True):
         for pread in pcol.pileups:
             dt = pread.alignment.query_sequence[max(0, pread.query_position_or_next):pread.query_position_or_next + 160]
             mq = pread.alignment.mapping_quality
-            # print("mapping quality:", mq)
-            # print("alt:",dt)
+
             if pread.alignment.qname in hap_reads_0:
                 d[0][pread.alignment.qname] = dt
             elif pread.alignment.qname in hap_reads_1:
@@ -264,15 +213,10 @@ def gen(args):
     fb = args.pos_path
     num_line_result = subprocess_popen(["wc", "-l", fb])
     num_line = int(num_line_result.split()[0])
-    total_iterations = num_line  # kf是你的循环迭代器，表示总的迭代次数
-    # progress_bar = tqdm(total=total_iterations, desc='Processing', unit='iteration')
 
     sam_path = args.bam_path
     ref_path = args.ref_path
-    # sam_path = '/media/usb2/gyc/hg003/hg003_50_g4.bam'
-    # sam_path = '/media/usb2/gyc/hg004/50_hg004.bam'
-    # sam_path = '/media/usb3/gyc/v4/hg002/hg002_51x.bam'
-    # ref_path = '/home/gyc/ont/seq/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna'
+
     pileup_file = open(args.out_path + '/' + fb.split('/')[-1] + '.pileup', "w")
     miss_output = open(args.out_path + '/' + 'miss' + '.pos', "a")
     samfile = pysam.Samfile(sam_path, "rb")
@@ -283,32 +227,28 @@ def gen(args):
     hap_dict = {1: [], 2: []}
     for pread in samfile.fetch(chrom, 0, length + 1):
         if pread.has_tag('HP'):
-            # phase_dict[pread.qname] = pread.get_tag('PS')
             hap_dict[pread.get_tag('HP')].append(pread.qname)
-        # else:
-        #     phase_dict[pread.qname] = None
+
     hap_reads_0 = set(hap_dict[1])
     hap_reads_1 = set(hap_dict[2])
     for chr_pos in kf:
         run(chr_pos, fastafile, samfile, pileup_file,miss_output, hap_reads_0, hap_reads_1)
-    #     progress_bar.update(1)
-    #
-    # progress_bar.close()
+
 
 
 def main():
     parser = ArgumentParser(
-        description="此文件旨在尝试使用clair3的结果文件中的snp位点进行phase得到的定相后的bam文件，提取其中的hap信息作为pf模型的特征")
+        description="The purpose of this file is to try to use the snp site in the vcf file to phase the phasing bam file, and extract the hap information as the feature of the pf model.")
     parser.add_argument('--bam_path', '-b', type=str, default=None,
-                        help="输入bam文件的路径. (default: %(default)s)")
+                        help="Enter the path to the bam file. (default: %(default)s)")
     parser.add_argument('--chromosome', '-c', type=str, default=None,
-                        help="输入chr. (default: %(default)s)")
+                        help="chromosome. (default: %(default)s)")
     parser.add_argument('--ref_path', '-r', type=str,default=None,
-                        help="输入ref文件的路径. (default: %(default)s)")
+                        help="Input the path of the REF file. (default: %(default)s)")
     parser.add_argument('--pos_path', '-p', type=str, default=None,
-                        help="输入位点文件的路径. (default: %(default)s)")
+                        help="The path of the input sites file. (default: %(default)s)")
     parser.add_argument('--out_path', '-o', type=str, default=None,
-                        help="输出文件的路径. (default: %(default)s)")
+                        help="The path of the output file. (default: %(default)s)")
     args = parser.parse_args()
 
     if len(sys.argv[1:]) == 0:

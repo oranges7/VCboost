@@ -3,7 +3,7 @@ contig='chr1-22'
 PARALLEL='parallel'
 WHATSHAP='whatshap'
 SAMTOOLS='samtools'
-THREADS=32
+THREADS=24
 RETRIES=3
 phase=1
 GEN_PY='generate_hap_both_onehot_refalt.py'
@@ -11,18 +11,18 @@ GEN_PY='generate_hap_both_onehot_refalt.py'
 help_message="
 Usage: $(basename "$0") [-o <out_path>] [-b <bam_file>] [-v <vcf>] [-m <model>] [-r <ref_path>] [-p <phase>] [-h <help>]
 Options:
-  -o, --out_path    Output path.
-  -b, --bam_file    BAM file path.
-  -v, --vcf         VCF file path.
-  -m, --model       Model path.
-  -r, --ref_path    Reference file path.
-  -t, --threads     Number of threads.The default is 32.
-  -c, --contig      Contig to process.The default is chr1-22.
-  -p, --phase       Enable phase.
-  -h, --help        Display this help message.
+  -o, -out_path    Output path.
+  -b, -bam_file    BAM file path.
+  -v, -vcf         VCF file path.
+  -m, -model       Model path.
+  -r, -ref_path    Reference file path.
+  -t, -threads     Number of threads.The default is 32.
+  -c, -contig      Contig to process.The default is chr1-22.
+  -p, -phase       Enable phase.
+  -h, -help        Display this help message.
 "
 
-while getopts ":o:b:v:m:r:t:c:ph" opt; do
+while getopts ":o:b:v:m:r:t:c:d:ph" opt; do
   case $opt in
     o|out_path)
       out_path="$OPTARG"
@@ -44,6 +44,9 @@ while getopts ":o:b:v:m:r:t:c:ph" opt; do
       ;;
     c|contig?)
       contig="$OPTARG"
+      ;;
+    d|model_path)
+      model_path="$OPTARG"
       ;;
     p|phase?)
       phase=2
@@ -71,7 +74,7 @@ while getopts ":o:b:v:m:r:t:c:ph" opt; do
 done
 
 if [ $# -eq 0 ]; then
-  echo "No options provided. Use -h or --help for usage information." >&2
+  echo "No options provided. Use -h or -help for usage information." >&2
   exit 1
 fi
 if [[ $# -lt 5 ]]; then
@@ -138,7 +141,8 @@ time ${PARALLEL} --bar --link --retries ${RETRIES} --joblog ${LOG_PATH}/parallel
           -o ${OUTPUT_DATA} \
           --pos_path ${OUTPUT}/{2}" :::: ${OUTPUT}/batch_chr.txt :::: ${OUTPUT}/cut_batch.txt |& tee ${LOG_PATH}/gen_data_f.log
 ls ${OUTPUT_DATA}/*.pileup > ${OUTPUT_DATA}/all_files.txt
-time ${PARALLEL} --bar -j ${THREADS} python3 ${SCRIPT}/pred_batch.py {1} {2} :::: ${OUTPUT_DATA}/all_files.txt ::: ${model}
+PTHREADS=$(( (${THREADS} / 8) * 3 ))
+time ${PARALLEL} --bar -j ${PTHREADS} python3 ${SCRIPT}/pred_batch.py {1} {2} :::: ${OUTPUT_DATA}/all_files.txt ::: ${model_path}/${model}
 python3 ${SCRIPT}/batch_con.py -i ${OUTPUT_DATA}/all_files.txt -o ${out_path} -f ${aim_vcf} -a ${OUTPUT_DATA}/miss.pos -c ${contig}
 
 rm -rf ${PHASE_BAM_PATH}

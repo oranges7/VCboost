@@ -9,8 +9,6 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Conv2D, BatchNormalization, Activation, Add
 from datetime import datetime
 import numpy as np
-
-
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 gpus = tf.config.experimental.list_physical_devices('GPU')
 
